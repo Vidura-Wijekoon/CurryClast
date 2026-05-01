@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>CurryCast — Architecture & Pipeline</title>
+<style>
+  :root {
+    --bg: #0f1420;
+    --panel: #1a2030;
+    --accent: #ff7a18;
+    --accent-2: #ffb86c;
+    --green: #4ade80;
+    --blue: #60a5fa;
+    --purple: #c084fc;
+    --text: #e6eaf2;
+    --muted: #9ca3af;
+    --border: #2a3349;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: linear-gradient(180deg, #0f1420 0%, #161c2c 100%);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 24px;
+    min-height: 100vh;
+  }
+  h1 {
+    font-size: 28px; margin: 0 0 4px 0; letter-spacing: -0.5px;
+  }
+  .sub { color: var(--muted); margin-bottom: 24px; font-size: 14px; }
+  .legend { display: flex; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; font-size: 12px; }
+  .legend span { display:inline-flex; align-items:center; gap:6px; }
+  .dot { width: 10px; height: 10px; border-radius: 2px; display:inline-block; }
+  svg { width: 100%; height: auto; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; }
+  .footer { margin-top: 16px; color: var(--muted); font-size: 12px; }
+  .stage-title { font-weight: 700; }
+  text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+</style>
+</head>
+<body>
+<h1>CurryCast — Demand &amp; Buffet Forecasting Pipeline</h1>
+<div class="sub">End-to-end architecture for Sri Lankan restaurant demand prediction · Café Mahaweli reference deployment</div>
+
+<div class="legend">
+  <span><i class="dot" style="background:#ff7a18"></i> Data Sources</span>
+  <span><i class="dot" style="background:#60a5fa"></i> Ingestion / Cleaning</span>
+  <span><i class="dot" style="background:#c084fc"></i> Feature Engineering</span>
+  <span><i class="dot" style="background:#4ade80"></i> Models</span>
+  <span><i class="dot" style="background:#ffb86c"></i> Outputs</span>
+</div>
+
+<svg viewBox="0 0 1400 820" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#9ca3af"/>
+    </marker>
+    <linearGradient id="srcGrad" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#ff7a18" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#c2410c" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="ingGrad" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#60a5fa" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#2563eb" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="featGrad" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#c084fc" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#7c3aed" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="modelGrad" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#4ade80" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#16a34a" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="outGrad" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#ffb86c" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.9"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Column headers -->
+  <text x="120"  y="40" font-size="14" fill="#9ca3af" font-weight="700">1 · DATA SOURCES</text>
+  <text x="400"  y="40" font-size="14" fill="#9ca3af" font-weight="700">2 · INGESTION &amp; CLEANING</text>
+  <text x="700"  y="40" font-size="14" fill="#9ca3af" font-weight="700">3 · FEATURE ENGINEERING</text>
+  <text x="990"  y="40" font-size="14" fill="#9ca3af" font-weight="700">4 · MODELS</text>
+  <text x="1230" y="40" font-size="14" fill="#9ca3af" font-weight="700">5 · OUTPUTS</text>
+
+  <!-- 1. DATA SOURCES (left column) -->
+  <g>
+    <rect x="40" y="60"  width="240" height="80" rx="8" fill="url(#srcGrad)"/>
+    <text x="160" y="92"  text-anchor="middle" font-size="14" font-weight="700" fill="#fff">POS Transactions</text>
+    <text x="160" y="112" text-anchor="middle" font-size="11" fill="#fff">NooDelo · Groowey · Restora · CSV</text>
+    <text x="160" y="128" text-anchor="middle" font-size="11" fill="#fff">6–12 months · item-level sales</text>
+
+    <rect x="40" y="160" width="240" height="80" rx="8" fill="url(#srcGrad)"/>
+    <text x="160" y="192" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">Weather (OpenWeatherMap)</text>
+    <text x="160" y="212" text-anchor="middle" font-size="11" fill="#fff">7-day hourly forecast</text>
+    <text x="160" y="228" text-anchor="middle" font-size="11" fill="#fff">temp · rain_mm · humidity</text>
+
+    <rect x="40" y="260" width="240" height="80" rx="8" fill="url(#srcGrad)"/>
+    <text x="160" y="292" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">Holiday &amp; Poya Calendar</text>
+    <text x="160" y="312" text-anchor="middle" font-size="11" fill="#fff">Public holidays · full-moon days</text>
+    <text x="160" y="328" text-anchor="middle" font-size="11" fill="#fff">School term · payday cycles</text>
+
+    <rect x="40" y="360" width="240" height="80" rx="8" fill="url(#srcGrad)"/>
+    <text x="160" y="392" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">Local Events</text>
+    <text x="160" y="412" text-anchor="middle" font-size="11" fill="#fff">Esala Perahera · Galle Lit Fest</text>
+    <text x="160" y="428" text-anchor="middle" font-size="11" fill="#fff">Cricket · BMICH conferences</text>
+
+    <rect x="40" y="460" width="240" height="80" rx="8" fill="url(#srcGrad)"/>
+    <text x="160" y="492" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">SLTDA Tourist Arrivals</text>
+    <text x="160" y="512" text-anchor="middle" font-size="11" fill="#fff">Monthly published statistics</text>
+    <text x="160" y="528" text-anchor="middle" font-size="11" fill="#fff">forward-fill to daily</text>
+  </g>
+
+  <!-- 2. INGESTION & CLEANING -->
+  <g>
+    <rect x="320" y="60"  width="240" height="80" rx="8" fill="url(#ingGrad)"/>
+    <text x="440" y="92"  text-anchor="middle" font-size="14" font-weight="700" fill="#fff">POS Connectors</text>
+    <text x="440" y="112" text-anchor="middle" font-size="11" fill="#fff">pos_connectors.py</text>
+    <text x="440" y="128" text-anchor="middle" font-size="11" fill="#fff">Pluggable adapters</text>
+
+    <rect x="320" y="160" width="240" height="80" rx="8" fill="url(#ingGrad)"/>
+    <text x="440" y="192" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">SKU Normalizer</text>
+    <text x="440" y="212" text-anchor="middle" font-size="11" fill="#fff">data_cleaner.py — RapidFuzz</text>
+    <text x="440" y="228" text-anchor="middle" font-size="11" fill="#fff">"kotu chiken" → "chicken_kottu"</text>
+
+    <rect x="320" y="260" width="240" height="80" rx="8" fill="url(#ingGrad)"/>
+    <text x="440" y="292" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">External API Layer</text>
+    <text x="440" y="312" text-anchor="middle" font-size="11" fill="#fff">external_apis.py</text>
+    <text x="440" y="328" text-anchor="middle" font-size="11" fill="#fff">Weather · SLTDA scrape · Cache</text>
+
+    <rect x="320" y="360" width="240" height="80" rx="8" fill="url(#ingGrad)"/>
+    <text x="440" y="392" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">Validation &amp; QC</text>
+    <text x="440" y="412" text-anchor="middle" font-size="11" fill="#fff">Pandera schema · null checks</text>
+    <text x="440" y="428" text-anchor="middle" font-size="11" fill="#fff">Unmapped SKU log</text>
+
+    <rect x="320" y="460" width="240" height="80" rx="8" fill="url(#ingGrad)"/>
+    <text x="440" y="492" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">Asia/Colombo Timezone</text>
+    <text x="440" y="512" text-anchor="middle" font-size="11" fill="#fff">All timestamps localized</text>
+    <text x="440" y="528" text-anchor="middle" font-size="11" fill="#fff">Hour aggregation</text>
+  </g>
+
+  <!-- 3. FEATURE ENGINEERING -->
+  <g>
+    <rect x="600" y="60"  width="240" height="80" rx="8" fill="url(#featGrad)"/>
+    <text x="720" y="92"  text-anchor="middle" font-size="14" font-weight="700" fill="#fff">Lag &amp; Rolling Features</text>
+    <text x="720" y="112" text-anchor="middle" font-size="11" fill="#fff">qty_lag_1d · 7d · 28d</text>
+    <text x="720" y="128" text-anchor="middle" font-size="11" fill="#fff">7d / 28d rolling means</text>
+
+    <rect x="600" y="160" width="240" height="80" rx="8" fill="url(#featGrad)"/>
+    <text x="720" y="192" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">Calendar Features</text>
+    <text x="720" y="212" text-anchor="middle" font-size="11" fill="#fff">DOW · hour · payday flag</text>
+    <text x="720" y="228" text-anchor="middle" font-size="11" fill="#fff">Cyclical sin/cos encoding</text>
+
+    <rect x="600" y="260" width="240" height="80" rx="8" fill="url(#featGrad)"/>
+    <text x="720" y="292" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">Holiday/Event Flags</text>
+    <text x="720" y="312" text-anchor="middle" font-size="11" fill="#fff">is_poya · is_public_holiday</text>
+    <text x="720" y="328" text-anchor="middle" font-size="11" fill="#fff">days_to_perahera</text>
+
+    <rect x="600" y="360" width="240" height="80" rx="8" fill="url(#featGrad)"/>
+    <text x="720" y="392" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">Weather Features</text>
+    <text x="720" y="412" text-anchor="middle" font-size="11" fill="#fff">rain_mm_t · t+6h · is_rainy</text>
+    <text x="720" y="428" text-anchor="middle" font-size="11" fill="#fff">heat_index · feels_like</text>
+
+    <rect x="600" y="460" width="240" height="80" rx="8" fill="url(#featGrad)"/>
+    <text x="720" y="492" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">Tourism Regressor</text>
+    <text x="720" y="512" text-anchor="middle" font-size="11" fill="#fff">SLTDA arrivals (28d MA)</text>
+    <text x="720" y="528" text-anchor="middle" font-size="11" fill="#fff">High-season multiplier</text>
+  </g>
+
+  <!-- 4. MODELS -->
+  <g>
+    <rect x="880" y="100" width="240" height="100" rx="8" fill="url(#modelGrad)"/>
+    <text x="1000" y="135" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">Daily Covers Backbone</text>
+    <text x="1000" y="158" text-anchor="middle" font-size="11" fill="#fff">Prophet</text>
+    <text x="1000" y="178" text-anchor="middle" font-size="11" fill="#fff">+ holiday/tourism regressors</text>
+
+    <rect x="880" y="220" width="240" height="100" rx="8" fill="url(#modelGrad)"/>
+    <text x="1000" y="255" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">Hourly Item-Level</text>
+    <text x="1000" y="278" text-anchor="middle" font-size="11" fill="#fff">LightGBM · per (item × hour)</text>
+    <text x="1000" y="298" text-anchor="middle" font-size="11" fill="#fff">Time-aware K-fold CV</text>
+
+    <rect x="880" y="340" width="240" height="100" rx="8" fill="url(#modelGrad)"/>
+    <text x="1000" y="375" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">Buffet Translator</text>
+    <text x="1000" y="398" text-anchor="middle" font-size="11" fill="#fff">covers × consumption_ratio</text>
+    <text x="1000" y="418" text-anchor="middle" font-size="11" fill="#fff">→ kg · portions</text>
+
+    <rect x="880" y="460" width="240" height="100" rx="8" fill="url(#modelGrad)"/>
+    <text x="1000" y="495" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">Evaluation</text>
+    <text x="1000" y="518" text-anchor="middle" font-size="11" fill="#fff">WAPE · MAPE · stockout %</text>
+    <text x="1000" y="538" text-anchor="middle" font-size="11" fill="#fff">LKR savings back-test</text>
+  </g>
+
+  <!-- 5. OUTPUTS -->
+  <g>
+    <rect x="1160" y="80" width="220" height="80" rx="8" fill="url(#outGrad)"/>
+    <text x="1270" y="110" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">FastAPI Endpoints</text>
+    <text x="1270" y="130" text-anchor="middle" font-size="11" fill="#fff">/predict · /backtest</text>
+    <text x="1270" y="146" text-anchor="middle" font-size="11" fill="#fff">/weather · /restaurant</text>
+
+    <rect x="1160" y="180" width="220" height="80" rx="8" fill="url(#outGrad)"/>
+    <text x="1270" y="210" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">React Frontend</text>
+    <text x="1270" y="228" text-anchor="middle" font-size="11" fill="#fff">Vite + TypeScript</text>
+    <text x="1270" y="244" text-anchor="middle" font-size="11" fill="#fff">Gold · Black · Brown</text>
+
+    <rect x="1160" y="280" width="220" height="80" rx="8" fill="url(#outGrad)"/>
+    <text x="1270" y="312" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">Tomorrow's Prep List</text>
+    <text x="1270" y="332" text-anchor="middle" font-size="11" fill="#fff">Printable kg/portions</text>
+    <text x="1270" y="348" text-anchor="middle" font-size="11" fill="#fff">EN + Sinhala/Tamil</text>
+
+    <rect x="1160" y="380" width="220" height="80" rx="8" fill="url(#outGrad)"/>
+    <text x="1270" y="412" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">Weather Impact Panel</text>
+    <text x="1270" y="432" text-anchor="middle" font-size="11" fill="#fff">"Rain Friday → soups"</text>
+    <text x="1270" y="448" text-anchor="middle" font-size="11" fill="#fff">Channel mix re-balance</text>
+
+    <rect x="1160" y="480" width="220" height="80" rx="8" fill="url(#outGrad)"/>
+    <text x="1270" y="512" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">Backtest Savings</text>
+    <text x="1270" y="532" text-anchor="middle" font-size="11" fill="#fff">"Saved LKR 312k/month"</text>
+    <text x="1270" y="548" text-anchor="middle" font-size="11" fill="#fff">Pitch slide</text>
+  </g>
+
+  <!-- Arrows: Sources → Ingestion -->
+  <line x1="280" y1="100" x2="320" y2="100" stroke="#9ca3af" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="280" y1="200" x2="320" y2="200" stroke="#9ca3af" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="280" y1="300" x2="320" y2="300" stroke="#9ca3af" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="280" y1="400" x2="320" y2="400" stroke="#9ca3af" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="280" y1="500" x2="320" y2="500" stroke="#9ca3af" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Arrows: Ingestion → Features -->
+  <line x1="560" y1="100" x2="600" y2="100" stroke="#9ca3af" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="560" y1="200" x2="600" y2="200" stroke="#9ca3af" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="560" y1="300" x2="600" y2="300" stroke="#9ca3af" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="560" y1="400" x2="600" y2="400" stroke="#9ca3af" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="560" y1="500" x2="600" y2="500" stroke="#9ca3af" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Arrows: Features → Models (converging) -->
+  <line x1="840" y1="100" x2="880" y2="150" stroke="#9ca3af" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="840" y1="200" x2="880" y2="270" stroke="#9ca3af" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="840" y1="300" x2="880" y2="270" stroke="#9ca3af" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="840" y1="400" x2="880" y2="270" stroke="#9ca3af" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="840" y1="500" x2="880" y2="150" stroke="#9ca3af" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Arrows: Daily covers → Hourly head, Hourly → Buffet, Hourly → Eval -->
+  <line x1="1000" y1="200" x2="1000" y2="220" stroke="#9ca3af" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="1000" y1="320" x2="1000" y2="340" stroke="#9ca3af" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="1000" y1="440" x2="1000" y2="460" stroke="#9ca3af" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Arrows: Models → Outputs -->
+  <line x1="1120" y1="150" x2="1160" y2="140" stroke="#9ca3af" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="1120" y1="270" x2="1160" y2="240" stroke="#9ca3af" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="1120" y1="270" x2="1160" y2="340" stroke="#9ca3af" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="1120" y1="390" x2="1160" y2="240" stroke="#9ca3af" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="1120" y1="510" x2="1160" y2="440" stroke="#9ca3af" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="1120" y1="390" x2="1160" y2="540" stroke="#9ca3af" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Bottom band: Ops + retraining -->
+  <rect x="40" y="620" width="1340" height="160" rx="12" fill="#1a2030" stroke="#2a3349"/>
+  <text x="60" y="650" font-size="14" font-weight="700" fill="#ffb86c">OPERATIONS &amp; LIFECYCLE</text>
+
+  <rect x="60"   y="670" width="220" height="90" rx="6" fill="#0f1420" stroke="#2a3349"/>
+  <text x="170"  y="700" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">Nightly Predict</text>
+  <text x="170"  y="722" text-anchor="middle" font-size="11" fill="#9ca3af">cron · 22:00 Asia/Colombo</text>
+  <text x="170"  y="740" text-anchor="middle" font-size="11" fill="#9ca3af">predict_tomorrow.py</text>
+
+  <rect x="300"  y="670" width="220" height="90" rx="6" fill="#0f1420" stroke="#2a3349"/>
+  <text x="410"  y="700" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">Weekly Retrain</text>
+  <text x="410"  y="722" text-anchor="middle" font-size="11" fill="#9ca3af">Sunday · 03:00</text>
+  <text x="410"  y="740" text-anchor="middle" font-size="11" fill="#9ca3af">Promote if WAPE ≤ prior</text>
+
+  <rect x="540"  y="670" width="220" height="90" rx="6" fill="#0f1420" stroke="#2a3349"/>
+  <text x="650"  y="700" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">Owner Feedback Loop</text>
+  <text x="650"  y="722" text-anchor="middle" font-size="11" fill="#9ca3af">"too much / too little"</text>
+  <text x="650"  y="740" text-anchor="middle" font-size="11" fill="#9ca3af">Adjusts shrinkage_factor</text>
+
+  <rect x="780"  y="670" width="220" height="90" rx="6" fill="#0f1420" stroke="#2a3349"/>
+  <text x="890"  y="700" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">Monitoring</text>
+  <text x="890"  y="722" text-anchor="middle" font-size="11" fill="#9ca3af">Drift on lag features</text>
+  <text x="890"  y="740" text-anchor="middle" font-size="11" fill="#9ca3af">Alert if WAPE &gt; 25%</text>
+
+  <rect x="1020" y="670" width="220" height="90" rx="6" fill="#0f1420" stroke="#2a3349"/>
+  <text x="1130" y="700" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">Storage</text>
+  <text x="1130" y="722" text-anchor="middle" font-size="11" fill="#9ca3af">Postgres · S3 model store</text>
+  <text x="1130" y="740" text-anchor="middle" font-size="11" fill="#9ca3af">7-day cached weather</text>
+</svg>
+
+<div class="footer">
+  CurryCast · 5-stage pipeline (Sources → Ingestion → Features → Models → Outputs) · Operations band shows nightly cron + weekly retrain.<br>
+  Inputs span POS, weather, calendar, events, and SLTDA tourism data — converging on a Prophet daily backbone and a LightGBM hourly head, with a buffet translator for kg/portions.
+</div>
+</body>
+</html>

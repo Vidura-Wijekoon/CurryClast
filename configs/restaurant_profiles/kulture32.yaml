@@ -1,0 +1,125 @@
+# Kulture32 — heritage Asian + Sri Lankan restaurant in Kandy
+# Address: No 32 D.S. Senanayake Veediya, Kandy
+# Style: home-cooked Sri Lankan + Asian fusion, heritage-inspired decor
+# Tripadvisor signal: 5.0 rating · "traditional Kandyan vibe" · "professional touch"
+# Adapted from public reviews of Mandiya, Cafe The Vibe, Devon, Kandyan Muslim Hotel.
+
+restaurant:
+  name: "Kulture32"
+  city: "Kandy"
+  timezone: "Asia/Colombo"
+  type: "casual_dining"           # heritage casual; à la carte at lunch + dinner
+  open_hour: 11
+  close_hour: 22                  # Kandy closes earlier than Colombo
+  avg_cover_value_lkr: 2200       # mid-range; Kandy prices below Colombo CBD
+  food_cost_pct: 0.33
+  weekly_seats: 1400
+  has_lunch_buffet: false         # à la carte; rice & curry plates are hero items
+  has_delivery: true              # PickMe Food / Uber Eats Kandy
+  walking_distance_to:
+    - "Sri Dalada Maligawa (Temple of the Tooth)"
+    - "Kandy Lake"
+    - "Asgiriya Stadium"
+  base_daily_covers: 95           # smaller footprint than mid-size Colombo (120)
+
+# Calibrated for Kandy: tourist heavy, monsoon-aware, perahera-driven.
+# Note: Kandy is cooler (avg 22-28°C vs Colombo 27-30°C) — heat-driven dips are rare;
+# rain-driven dips are common (afternoon showers from May-Sept and Oct-Dec).
+
+# Consumption ratios per cover (kg or portion-equivalent units).
+# Heritage menu skews toward rice & curry, polos, lamprais, plus pan-Asian.
+buffet:
+  shrinkage_factor: 1.06          # slightly higher buffer — Kandy stockouts hurt more (limited dinner alts)
+  min_prep_kg: 0.4
+  consumption_ratios:
+    # Sri Lankan core
+    rice: 0.22
+    dhal_curry: 0.12
+    pol_sambol: 0.05
+    fish_ambul_thiyal: 0.07
+    chicken_curry: 0.13
+    cashew_curry: 0.06
+    brinjal_moju: 0.05
+    polos_curry: 0.06             # young jackfruit — Kandy classic
+    kandyan_beef_curry: 0.08      # signature Kandy dish
+    seer_fish_curry: 0.06
+    # Heritage / Burgher
+    lamprais: 0.10                # banana-leaf parcel; very popular here
+    string_hoppers: 0.16
+    egg_hopper: 0.05
+    milk_rice: 0.08               # kiribath — poya & New Year staple
+    # Kottu / wok
+    chicken_kottu: 0.22
+    cheese_kottu: 0.12
+    egg_kottu: 0.10
+    # Asian fusion (Kulture32 differentiator)
+    nasi_goreng: 0.12             # Indonesian-style fried rice
+    pad_thai: 0.10                # Thai noodles
+    thai_red_curry: 0.09
+    thai_green_curry: 0.09
+    chinese_fried_rice: 0.14
+    # Sweets / drinks
+    watalappan: 0.04              # Kandy-Burgher dessert
+    love_cake: 0.03               # heritage Burgher cake
+    king_coconut: 0.45
+    ceylon_tea: 0.55              # Kandy is hill country — tea is a strong seller
+    lion_lager: 0.22              # lower than Colombo (Kandy is more religious-tourist)
+    faluda: 0.18
+
+menu:
+  categories:
+    rice_curry:
+      - rice
+      - dhal_curry
+      - pol_sambol
+      - fish_ambul_thiyal
+      - chicken_curry
+      - cashew_curry
+      - brinjal_moju
+      - polos_curry
+      - kandyan_beef_curry
+      - seer_fish_curry
+    heritage:
+      - lamprais
+      - milk_rice
+      - watalappan
+      - love_cake
+    short_eats:
+      - string_hoppers
+      - egg_hopper
+    kottu:
+      - chicken_kottu
+      - cheese_kottu
+      - egg_kottu
+    asian_fusion:
+      - nasi_goreng
+      - pad_thai
+      - thai_red_curry
+      - thai_green_curry
+      - chinese_fried_rice
+    drinks:
+      - king_coconut
+      - ceylon_tea
+      - lion_lager
+      - faluda
+
+# Kandy-specific demand calibration overrides
+kandy:
+  perahera:
+    # Esala Perahera 2025: ~Aug 2 (Randoli) - Aug 8 (final). Demand spikes both
+    # before (devotees arriving) and during the procession.
+    start_date: "2025-07-31"
+    end_date: "2025-08-09"
+    multiplier: 1.45              # weekday spike during Perahera
+    weekend_multiplier: 1.65      # major nights are even bigger
+    devotee_dish_boost:           # poya / observance day favourites
+      milk_rice: 1.6
+      polos_curry: 1.4
+      pol_sambol: 1.3
+  tooth_relic_devotees:
+    daily_lift: 1.05              # baseline tourist + devotee inflow
+    poya_lift: 1.25               # extra on full-moon days
+  weather_sensitivity:
+    rain_dine_in_drop: 0.78       # Kandy diners stay home in rain more than Colombo
+    delivery_lift_on_rain: 1.40
+    cool_temp_threshold_c: 22     # below this, hot soups & tea +8%

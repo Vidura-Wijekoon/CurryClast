@@ -1,0 +1,80 @@
+# CurryCast default configuration
+# Per-restaurant profiles (configs/restaurant_profiles/*.yaml) override these.
+
+restaurant:
+  name: "Default Restaurant"
+  city: "Colombo"
+  timezone: "Asia/Colombo"
+  type: "casual_dining"   # casual_dining | buffet | fine_dining
+  open_hour: 11
+  close_hour: 23
+  avg_cover_value_lkr: 2500
+  food_cost_pct: 0.34
+
+data:
+  history_months: 12
+  min_train_days: 60
+  holdout_days: 30
+
+features:
+  use_weather: true
+  use_holidays: true
+  use_events: true
+  use_tourism: true
+  lag_days: [1, 7, 14, 28]
+  rolling_windows: [7, 28]
+
+model:
+  daily_backbone:
+    type: prophet
+    yearly_seasonality: true
+    weekly_seasonality: true
+    daily_seasonality: false
+    changepoint_prior_scale: 0.05
+    holidays_prior_scale: 10.0
+    interval_width: 0.8
+
+  hourly_head:
+    type: lightgbm
+    objective: regression
+    metric: mae
+    learning_rate: 0.05
+    num_leaves: 31
+    max_depth: 7
+    min_child_samples: 20
+    n_estimators: 400
+    early_stopping_rounds: 30
+    random_state: 42
+
+buffet:
+  shrinkage_factor: 1.05      # prep 5% buffer above forecast
+  min_prep_kg: 0.5            # never prep less than this for any item
+  consumption_ratios:         # default kg/cover (override per restaurant)
+    rice: 0.18
+    dhal_curry: 0.10
+    pol_sambol: 0.04
+    fish_ambul_thiyal: 0.08
+    chicken_curry: 0.12
+    chicken_kottu: 0.25
+    string_hoppers: 0.15
+    devilled_chicken: 0.09
+    cashew_curry: 0.06
+    brinjal_moju: 0.05
+
+evaluation:
+  primary_metric: wape
+  secondary_metrics: [mape, rmse]
+  promote_threshold: 0.0      # only promote if new <= old WAPE
+
+api:
+  openweather:
+    base_url: "https://api.openweathermap.org/data/2.5"
+    forecast_endpoint: "forecast"
+    units: "metric"
+    cache_ttl_minutes: 60
+  sltda:
+    base_url: "https://www.sltda.gov.lk/en/monthly-tourist-arrivals-reports"
+
+logging:
+  level: INFO
+  format: pretty   # pretty | json

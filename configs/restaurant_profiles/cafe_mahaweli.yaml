@@ -1,0 +1,56 @@
+# Café Mahaweli — fictional reference deployment for the demo
+# Mid-size Colombo casual dining + lunch-buffet hybrid
+# Real restaurants used as inspiration: Upali's, Café Sociale
+
+restaurant:
+  name: "Café Mahaweli"
+  city: "Colombo"
+  timezone: "Asia/Colombo"
+  type: "casual_dining"      # has a lunch buffet, à la carte at dinner
+  open_hour: 11
+  close_hour: 23
+  avg_cover_value_lkr: 2400
+  food_cost_pct: 0.34
+  weekly_seats: 1800
+  has_lunch_buffet: true
+  has_delivery: true
+
+# Override consumption ratios from baseline observations
+buffet:
+  shrinkage_factor: 1.05
+  consumption_ratios:
+    rice: 0.20
+    dhal_curry: 0.11
+    pol_sambol: 0.045
+    fish_ambul_thiyal: 0.075
+    chicken_curry: 0.13
+    chicken_kottu: 0.28
+    string_hoppers: 0.17
+    devilled_chicken: 0.085
+    cashew_curry: 0.055
+    brinjal_moju: 0.055
+    egg_hopper: 0.05
+    seer_fish_curry: 0.07
+
+menu:
+  categories:
+    rice_curry:
+      - rice
+      - dhal_curry
+      - pol_sambol
+      - fish_ambul_thiyal
+      - chicken_curry
+      - cashew_curry
+      - brinjal_moju
+    kottu:
+      - chicken_kottu
+      - cheese_kottu
+      - egg_kottu
+    short_eats:
+      - string_hoppers
+      - egg_hopper
+      - devilled_chicken
+    drinks:
+      - king_coconut
+      - lion_lager
+      - faluda
