@@ -256,8 +256,12 @@ class RestaurantGenerator:
     # ---- Calendar / range -----------------------------------------------
 
     def _date_range(self) -> list[date]:
-        end = self.start_date + timedelta(days=int(self.months * 30.5))
-        return [self.start_date + timedelta(days=i) for i in range((end - self.start_date).days)]
+        today = date.today()
+        # Ensure we cover at least up to today, or further if months parameter dictates
+        end_from_months = self.start_date + timedelta(days=int(self.months * 30.5))
+        end = max(today, end_from_months)
+        # Return range including the end date
+        return [self.start_date + timedelta(days=i) for i in range((end - self.start_date).days + 1)]
 
     def _event_multiplier(self, d: date) -> tuple[float, str | None]:
         for start, end, name, mult, kandy_only in EVENTS:

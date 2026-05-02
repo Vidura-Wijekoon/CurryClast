@@ -7,11 +7,9 @@ if [ ! -f "data/synthetic/transactions.parquet" ]; then
     python scripts/generate_synthetic_data.py
 fi
 
-# Train model if it doesn't exist
-if [ ! -f "data/models/currycast_model.pkl" ]; then
-    echo "🧠 No model found. Training..."
-    python scripts/train_model.py
-fi
+# Run training pipeline (handles staleness check internally)
+echo "🧠 Checking model/data freshness..."
+python scripts/train_model.py
 
 echo "✨ Starting API Service..."
 uvicorn src.api.service:app --host 0.0.0.0 --port 7860

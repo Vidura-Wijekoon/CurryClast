@@ -41,9 +41,20 @@ def _seed(seed: int = 42):
 def _load_synthetic() -> tuple[pd.DataFrame, pd.DataFrame]:
     txn_path = PATHS.data_synthetic / "transactions.parquet"
     weather_path = PATHS.data_synthetic / "weather.parquet"
-    if not txn_path.exists():
-        log.info("Synthetic data missing — generating now")
+    
+    needs_gen = not txn_path.exists()
+    if not needs_gen:
+        # Check if existing data covers up to today
+        temp_txn = pd.read_parquet(txn_path)
+        last_date = pd.to_datetime(temp_txn["timestamp"]).max().date()
+        if last_date < pd.Timestamp.today().date():
+            log.info("Synthetic data is stale (last date: %s) — regenerating", last_date)
+            needs_gen = True
+
+    if needs_gen:
+        log.info("Generating synthetic data...")
         generate_and_save()
+    
     txn = pd.read_parquet(txn_path)
     weather = pd.read_parquet(weather_path)
 
